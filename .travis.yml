@@ -1,0 +1,33 @@
+dist: trusty
+git:
+  depth: false
+addons:
+  sonarcloud:
+    organization: "caputoalessia"
+    token:
+      secure: YjYYGgAfR5gsx0h+zDDiZc94koklignXdDQQIZuD9Uqb2q2luOLZt0xXwXs64CIAI6HrDJ0+x+2zlSQ5iEwSyeSli/NM60wqRPL87hO55A2sVbnHBJJX3RSYp0Z1nKZZI4S+vju3FG84Cfk2WSpBwiyilFC1MMmOD/+E33/FEQfFH4Jedb6dK+DKOpwq/u5w+uOQjtn2u3S4Cy+E3iQIdnVRDXU+BLq/S2i3aT900bmeLcf8Yf1lqZGvZQud3tmf0YYQhnf0lc+GBZwdfW5ubwUTgwR3eKe+hWclbiNFlzprKccErADUu1R9boLvT66aLFmF/2sp5XU6mrDy8cFhkXkHQQAFQ2THoh1SsYlq5X0+JS3q4W0koMHRJEzJp10lCjPjFry1DkeOpBN/Pss1l/oaiX2pyW0GppLBCIpRUmMNp5o1a2BZ+qmzr0BVUqls57bFQXpZHnc37CST0Q784kIYuU2KpRca6iogVNLTHZmkPNanTyjk3WK/z3RxDw9q1a1vdyuTJfeJUWCBHfRCJTGZ48IHHZDvCBO0J9dhwMCwff5kRdN/Qzdsf3IbyCbnkVoCOmYljHpqQ0RRUILAWCvxfHUw6L8DxgdDlGvwoFTrvdLgIC1t6y42guJv0gOLkSyoQLnsio+ps792iqqNV+ouhl5HuD8lepsF1BUNOrw=
+language: python
+python:
+- '3.6'
+before_install:
+  - pip install --upgrade pytest
+install:
+- pip install .[test]
+before_script:
+  - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+  - chmod +x ./cc-test-reporter
+  - ./cc-test-reporter before-build
+after_script:
+  - ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT
+script:
+- rm -rf .coverage
+- coverage erase
+- pytest --cov=progetto_bioinfo --cov-report xml:coverage.xml 
+- coverage combine --append || true
+- coverage report
+- coverage xml
+- 'if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then sonar-scanner; fi' # sonar only on non-PRs
+
+after_success:
+  - coveralls
+  - python-codacy-coverage -r coverage.xml
