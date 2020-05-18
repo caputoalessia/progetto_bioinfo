@@ -6,11 +6,11 @@ import compress_json
 from tqdm.auto import tqdm
 from plot_keras_history import plot_history
 from barplots import barplots
-
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Input, Flatten, Conv2D, Reshape, Dropout
-from tensorflow.keras.callbacks import EarlyStopping
-from tensorflow.keras.metrics import AUC
+import tensorflow
+from tensorflow_core.python.keras.api._v2.keras.models import Sequential
+from tensorflow_core.python.keras.api._v2.keras.layers import Dense, Input, Flatten, Conv2D, Reshape, Dropout
+from tensorflow_core.python.keras.api._v2.keras.callbacks import EarlyStopping
+from tensorflow_core.python.keras.api._v2.keras.metrics import AUC
 
 def CNN():
   cnn = Sequential([

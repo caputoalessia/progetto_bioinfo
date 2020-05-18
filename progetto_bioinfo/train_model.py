@@ -8,9 +8,9 @@ from plot_keras_history import plot_history
 from ucsc_genomes_downloader import Genome
 from keras_bed_sequence import BedSequence
 from keras_mixed_sequence import MixedSequence
-from tensorflow.keras.utils import Sequence
-from tensorflow.keras.callbacks import EarlyStopping
-from tensorflow.keras.metrics import AUC
+from tensorflow_core.python.keras.api._v2.keras.utils import Sequence
+from tensorflow_core.python.keras.api._v2.keras.callbacks import EarlyStopping
+from tensorflow_core.python.keras.api._v2.keras.metrics import AUC
 from sklearn.model_selection import StratifiedShuffleSplit
 from epigenomic_dataset import load_epigenomes
 import tensorflow as tf

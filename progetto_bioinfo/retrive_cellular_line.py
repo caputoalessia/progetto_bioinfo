@@ -12,6 +12,10 @@ from sklearn.metrics.pairwise import euclidean_distances
 from sklearn.impute import KNNImputer
 from sklearn.decomposition import PCA
 from keras_bed_sequence import BedSequence
+from sklearn.preprocessing import RobustScaler
+from scipy.stats import pearsonr
+from scipy.stats import spearmanr
+#from minepy import MINE
 
 def knn_imputer(df:pd.DataFrame, neighbours:int=5)->pd.DataFrame:
     return pd.DataFrame(
@@ -45,6 +49,16 @@ def to_bed(data:pd.DataFrame)->pd.DataFrame:
     """Return bed coordinates from given dataset."""
     return data.reset_index()[data.index.names]
 
+def robust_zscoring(df:pd.DataFrame)->pd.DataFrame:
+    return pd.DataFrame(
+        RobustScaler().fit_transform(df.values),
+        columns=df.columns,
+        index=df.index
+    )
+
+def drop_constant_features(df:pd.DataFrame)->pd.DataFrame:
+    return df.loc[:, (df != df.iloc[0]).any()]
+
 def retrive_cell_line(line, win_size):
     cell_line = line
     window_size = win_size
@@ -63,8 +77,8 @@ def retrive_cell_line(line, win_size):
         window_size = window_size
     )
 
-    promoters_epigenomes = promoters_epigenomes.droplevel(1, axis=1) 
-    enhancers_epigenomes = enhancers_epigenomes.droplevel(1, axis=1)
+    #promoters_epigenomes = promoters_epigenomes.droplevel(1, axis=1) 
+    #enhancers_epigenomes = enhancers_epigenomes.droplevel(1, axis=1)
     promoters_labels = promoters_labels.values.ravel()
     enhancers_labels = enhancers_labels.values.ravel()
     epigenomes = {
@@ -76,6 +90,8 @@ def retrive_cell_line(line, win_size):
         "enhancers": enhancers_labels
     }
 
+    return epigenomes
+    '''
     #Ratio should be > 1
     for region, x in epigenomes.items():
         print(
@@ -83,7 +99,7 @@ def retrive_cell_line(line, win_size):
         )
         print("="*80)
     
-    #Check presence of Nan, if low inputation
+    #Check presence of Nan, if low imputation
     for region, x in epigenomes.items():
         print("\n".join((
             f"Nan values report for {region} data:",
@@ -93,10 +109,64 @@ def retrive_cell_line(line, win_size):
         )))
         print("="*80)
 
-    #Knn inputation
+    #Knn imputation
     for region, x in epigenomes.items():
         epigenomes[region] = knn_imputer(x)
 
+    #Gestisco outliars con z-scoring
+    epigenomes = {
+        region: robust_zscoring(x)
+        for region, x in epigenomes.items()
+    }
+
+    #Gestiamo features costanti
+    for region, x in epigenomes.items():
+        result = drop_constant_features(x)
+        if x.shape[1] != result.shape[1]:
+            print(f"Features in {region} were constant and had to be dropped!")
+            epigenomes[region] = result
+        else:
+            print(f"No constant features were found in {region}!")
+    print("="*80)
+
+    #Correlazione lineare con pearson
+    p_value_threshold = 0.01
+    correlation_threshold = 0.05
+    uncorrelated = {
+        region: set()
+        for region in epigenomes
+    }
+    for region, x in epigenomes.items():
+        for column in tqdm(x.columns, desc=f"Running Pearson test for {region}", dynamic_ncols=True, leave=False):
+            correlation, p_value = pearsonr(x[column].values.ravel(), labels[region].values.ravel())
+            if p_value > p_value_threshold:
+                print(region, column, correlation)
+                uncorrelated[region].add(column)
+    print("="*80)
+
+    #Correlazione monotona  con Spearman
+    for region, x in epigenomes.items():
+        for column in tqdm(x.columns, desc=f"Running Spearman test for {region}", dynamic_ncols=True, leave=False):
+            correlation, p_value = spearmanr(x[column].values.ravel(), labels[region].values.ravel())
+            if p_value > p_value_threshold:
+                print(region, column, correlation)
+                uncorrelated[region].add(column)
+    print("="*80)
+    
+    #Correlazione non lineare
+    for region, x in epigenomes.items():
+        for column in tqdm(uncorrelated[region], desc=f"Running MINE test for {region}", dynamic_ncols=True, leave=False):
+            mine = MINE()
+            mine.compute_score(x[column].values.ravel(), labels[region].values.ravel())
+            score = mine.mic()
+            if score < correlation_threshold:
+                print(region, column, score)
+            else:
+                uncorrelated[region].remove(column)
+    
+
+    print("="*80)
     bed = to_bed(epigenomes["promoters"])
     print(bed[:5])
     return bed, labels["promoters"]
+    '''
