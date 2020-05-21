@@ -13,9 +13,17 @@ from sklearn.impute import KNNImputer
 from sklearn.decomposition import PCA
 from keras_bed_sequence import BedSequence
 from sklearn.preprocessing import RobustScaler
-from scipy.stats import pearsonr
-from scipy.stats import spearmanr
-#from minepy import MINE
+
+def robust_zscoring(df:pd.DataFrame)->pd.DataFrame:
+    return pd.DataFrame(
+        RobustScaler().fit_transform(df.values),
+        columns=df.columns,
+        index=df.index
+    )
+
+def drop_constant_features(df:pd.DataFrame)->pd.DataFrame:
+    """Return DataFrame without constant features."""
+    return df.loc[:, (df != df.iloc[0]).any()]
 
 def knn_imputer(df:pd.DataFrame, neighbours:int=5)->pd.DataFrame:
     return pd.DataFrame(
@@ -49,19 +57,10 @@ def to_bed(data:pd.DataFrame)->pd.DataFrame:
     """Return bed coordinates from given dataset."""
     return data.reset_index()[data.index.names]
 
-def robust_zscoring(df:pd.DataFrame)->pd.DataFrame:
-    return pd.DataFrame(
-        RobustScaler().fit_transform(df.values),
-        columns=df.columns,
-        index=df.index
-    )
-
-def drop_constant_features(df:pd.DataFrame)->pd.DataFrame:
-    return df.loc[:, (df != df.iloc[0]).any()]
-
 def retrive_cell_line(line, win_size):
     cell_line = line
     window_size = win_size
+    assembly = "hg19"
 
     promoters_epigenomes, promoters_labels = load_epigenomes(
         cell_line = cell_line,
@@ -77,10 +76,13 @@ def retrive_cell_line(line, win_size):
         window_size = window_size
     )
 
-    #promoters_epigenomes = promoters_epigenomes.droplevel(1, axis=1) 
-    #enhancers_epigenomes = enhancers_epigenomes.droplevel(1, axis=1)
-    promoters_labels = promoters_labels.values.ravel()
-    enhancers_labels = enhancers_labels.values.ravel()
+    promoters_epigenomes = promoters_epigenomes.droplevel(1, axis=1) 
+    enhancers_epigenomes = enhancers_epigenomes.droplevel(1, axis=1)
+    
+    
+    #promoters_labels = promoters_labels.values.ravel()
+    #enhancers_labels = enhancers_labels.values.ravel()
+    
     epigenomes = {
         "promoters": promoters_epigenomes,
         "enhancers": enhancers_epigenomes
@@ -90,16 +92,31 @@ def retrive_cell_line(line, win_size):
         "enhancers": enhancers_labels
     }
 
-    return epigenomes
-    '''
-    #Ratio should be > 1
+    genome = Genome(assembly)
+
+    # Recuperare sequenze dalle regioni specificate
+    print(genome.bed_to_sequence(to_bed(epigenomes["promoters"])[:2]))
+
+    # Flatten one-hot encoding
+    sequences = {
+        region: to_dataframe(
+            flat_one_hot_encode(genome, data, window_size),
+            window_size
+        )
+        for region, data in epigenomes.items()
+    }
+
+    #print(sequences["promoters"][:2])
+    #print(sequences["enhancers"][:2])
+
+    #Ratio features/samples, should be > 1
     for region, x in epigenomes.items():
         print(
             f"The rate between features and samples for {region} data is: {x.shape[0]/x.shape[1]}"
         )
         print("="*80)
-    
-    #Check presence of Nan, if low imputation
+
+    #Check presence of Nan, if low inputation
     for region, x in epigenomes.items():
         print("\n".join((
             f"Nan values report for {region} data:",
@@ -109,17 +126,28 @@ def retrive_cell_line(line, win_size):
         )))
         print("="*80)
 
-    #Knn imputation
+    
+    
+    #Knn inputation
     for region, x in epigenomes.items():
         epigenomes[region] = knn_imputer(x)
 
-    #Gestisco outliars con z-scoring
-    epigenomes = {
-        region: robust_zscoring(x)
-        for region, x in epigenomes.items()
-    }
+    '''
+    bed = to_bed(epigenomes["promoters"])
+    print(bed[:5])
+    return bed, labels["promoters"]
+    '''
+    # Check class balance
+    fig, axes = plt.subplots(ncols=2, figsize=(10, 5))
 
-    #Gestiamo features costanti
+    for axis, (region, y) in zip(axes.ravel(), labels.items()):
+        y.hist(ax=axis, bins=3)
+        axis.set_title(f"Classes count in {region}")
+    fig.show()
+    fig.savefig("./imgs/"+ cell_line +f"/class_balance")
+    plt.close('all')
+    
+    #Drop constant feature
     for region, x in epigenomes.items():
         result = drop_constant_features(x)
         if x.shape[1] != result.shape[1]:
@@ -127,46 +155,12 @@ def retrive_cell_line(line, win_size):
             epigenomes[region] = result
         else:
             print(f"No constant features were found in {region}!")
-    print("="*80)
 
-    #Correlazione lineare con pearson
-    p_value_threshold = 0.01
-    correlation_threshold = 0.05
-    uncorrelated = {
-        region: set()
-        for region in epigenomes
+    
+    #Apply z-scoring
+    epigenomes = {
+        region: robust_zscoring(x)
+        for region, x in epigenomes.items()
     }
-    for region, x in epigenomes.items():
-        for column in tqdm(x.columns, desc=f"Running Pearson test for {region}", dynamic_ncols=True, leave=False):
-            correlation, p_value = pearsonr(x[column].values.ravel(), labels[region].values.ravel())
-            if p_value > p_value_threshold:
-                print(region, column, correlation)
-                uncorrelated[region].add(column)
-    print("="*80)
 
-    #Correlazione monotona  con Spearman
-    for region, x in epigenomes.items():
-        for column in tqdm(x.columns, desc=f"Running Spearman test for {region}", dynamic_ncols=True, leave=False):
-            correlation, p_value = spearmanr(x[column].values.ravel(), labels[region].values.ravel())
-            if p_value > p_value_threshold:
-                print(region, column, correlation)
-                uncorrelated[region].add(column)
-    print("="*80)
-    
-    #Correlazione non lineare
-    for region, x in epigenomes.items():
-        for column in tqdm(uncorrelated[region], desc=f"Running MINE test for {region}", dynamic_ncols=True, leave=False):
-            mine = MINE()
-            mine.compute_score(x[column].values.ravel(), labels[region].values.ravel())
-            score = mine.mic()
-            if score < correlation_threshold:
-                print(region, column, score)
-            else:
-                uncorrelated[region].remove(column)
-    
-
-    print("="*80)
-    bed = to_bed(epigenomes["promoters"])
-    print(bed[:5])
-    return bed, labels["promoters"]
-    '''
+    return epigenomes, labels, sequences

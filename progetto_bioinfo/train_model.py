@@ -8,16 +8,11 @@ from plot_keras_history import plot_history
 from ucsc_genomes_downloader import Genome
 from keras_bed_sequence import BedSequence
 from keras_mixed_sequence import MixedSequence
-from tensorflow_core.python.keras.api._v2.keras.utils import Sequence
-from tensorflow_core.python.keras.api._v2.keras.callbacks import EarlyStopping
-from tensorflow_core.python.keras.api._v2.keras.metrics import AUC
+from tensorflow.keras.utils import Sequence
+from tensorflow.keras.callbacks import EarlyStopping
+from tensorflow.keras.metrics import AUC
 from sklearn.model_selection import StratifiedShuffleSplit
 from epigenomic_dataset import load_epigenomes
-import tensorflow as tf
-
-physical_devices = tf.config.experimental.list_physical_devices('GPU') 
-for physical_device in physical_devices:
-    tf.config.experimental.set_memory_growth(physical_device, True)
 
 def get_holdout(train:np.ndarray, test:np.ndarray, bed:pd.DataFrame, labels:np.ndarray, genome, batch_size=1024)->Tuple[Sequence, Sequence]:
     return (
@@ -42,12 +37,19 @@ def precomputed(results, model:str, holdout:int)->bool:
         (df.holdout == holdout)
     ).any()
 
-def train_model(model, bed, labels):
+def to_bed(data:pd.DataFrame)->pd.DataFrame:
+    """Return bed coordinates from given dataset."""
+    return data.reset_index()[data.index.names]
+
+def train_model(model, epigenomes, nlabels):
     splits = 2
     holdouts = StratifiedShuffleSplit(n_splits=splits, test_size=0.2, random_state=42)
     genome = Genome("hg19")
-    
-    print(bed)
+    bed = epigenomes["promoters"].reset_index()[epigenomes["promoters"].index.names]
+    print(bed.shape)
+    labels = nlabels["promoters"].values.ravel()
+
+
     if os.path.exists("sequence.json"):
         results = compress_json.local_load("sequence.json")
     else:
