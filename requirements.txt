@@ -20,3 +20,4 @@ MulticoreTSNE
 tsnecuda
 prince
 minepy
+boruta

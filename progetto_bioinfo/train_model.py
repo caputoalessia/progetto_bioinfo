@@ -41,58 +41,63 @@ def to_bed(data:pd.DataFrame)->pd.DataFrame:
     """Return bed coordinates from given dataset."""
     return data.reset_index()[data.index.names]
 
-def train_model(model, epigenomes, nlabels):
+def train_model(models, epigenomes, nlabels):
     splits = 2
-    holdouts = StratifiedShuffleSplit(n_splits=splits, test_size=0.2, random_state=42)
+    holdouts = StratifiedShuffleSplit(n_splits=splits, test_size=0.3, random_state=42)
     genome = Genome("hg19")
-    bed = epigenomes["promoters"].reset_index()[epigenomes["promoters"].index.names]
+    bed = to_bed(epigenomes["promoters"])
     print(bed.shape)
     labels = nlabels["promoters"].values.ravel()
+    print(bed)
+    print(labels)
 
-
+    '''
     if os.path.exists("sequence.json"):
         results = compress_json.local_load("sequence.json")
     else:
-        results = []
+    '''
+    results = []
 
     for i, (train_index, test_index) in tqdm(enumerate(holdouts.split(bed, labels)), total=splits, desc="Computing holdouts", dynamic_ncols=True):
         train, test = get_holdout(train_index, test_index, bed, labels, genome)
-        if precomputed(results, model.name, i):
-            continue
-        history = model.fit(
-            train,
-            steps_per_epoch=train.steps_per_epoch,
-            validation_data=test,
-            validation_steps=test.steps_per_epoch,
-            epochs=1000,
-            shuffle=True,
-            verbose=True,
-            callbacks=[
-                EarlyStopping(monitor="val_loss", mode="min", patience=50),
-            ]
-        ).history
-        scores = pd.DataFrame(history).iloc[-1].to_dict()
-        results.append({
-            "model":model.name,
-            "run_type":"train",
-            "holdout":i,
-            **{
-                key:value
-                for key, value in scores.items()
-                if not key.startswith("val_")
-            }
-        })
-        results.append({
-            "model":model.name,
-            "run_type":"test",
-            "holdout":i,
-            **{
-                key[4:]:value
-                for key, value in scores.items()
-                if key.startswith("val_")
-            }
-        })
-        compress_json.local_dump(results, "sequence.json")
-        df = pd.DataFrame(results).drop(columns="holdout")
+        for model in tqdm(models, total=len(models), desc="Training models", leave=False, dynamic_ncols=True):
+            if precomputed(results, model.name, i):
+                continue
+            history = model.fit(
+                train,
+                steps_per_epoch=train.steps_per_epoch,
+                validation_data=test,
+                validation_steps=test.steps_per_epoch,
+                epochs=1000,
+                shuffle=True,
+                verbose=True,
+                class_weight={0:1, 1:10},
+                callbacks=[
+                    EarlyStopping(monitor="val_loss", mode="min", patience=50),
+                ]
+            ).history
+            scores = pd.DataFrame(history).iloc[-1].to_dict()
+            results.append({
+                "model":model.name,
+                "run_type":"train",
+                "holdout":i,
+                **{
+                    key:value
+                    for key, value in scores.items()
+                    if not key.startswith("val_")
+                }
+            })
+            results.append({
+                "model":model.name,
+                "run_type":"test",
+                "holdout":i,
+                **{
+                    key[4:]:value
+                    for key, value in scores.items()
+                    if key.startswith("val_")
+                }
+            })
+            compress_json.local_dump(results, "sequence.json")
+            df = pd.DataFrame(results).drop(columns="holdout")
     return df
     

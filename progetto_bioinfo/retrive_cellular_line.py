@@ -105,7 +105,7 @@ def retrive_cell_line(line, win_size):
         )
         for region, data in epigenomes.items()
     }
-
+    
     #print(sequences["promoters"][:2])
     #print(sequences["enhancers"][:2])
 

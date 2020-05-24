@@ -11,9 +11,12 @@ from prince import MFA
 from sklearn.manifold import TSNE as STSNE
 from MulticoreTSNE import MulticoreTSNE as UTSNE
 from tsnecuda import TSNE as CTSNE
+from sklearn.ensemble import RandomForestClassifier
+from boruta import BorutaPy
+from minepy import MINE
+from scipy.stats import spearmanr
 
 def mfa(x:pd.DataFrame, n_components:int=2, nucleotides:str='actg')->np.ndarray:
-    print("mfa called")
     return MFA(groups={
         nucleotide: [
             column
@@ -24,23 +27,12 @@ def mfa(x:pd.DataFrame, n_components:int=2, nucleotides:str='actg')->np.ndarray:
     }, n_components=n_components, random_state=42).fit_transform(x)
 
 def pca(x:np.ndarray, n_components:int=2)->np.ndarray:
-    print("pca called")
     return PCA(n_components=n_components, random_state=42).fit_transform(x)
 
 def cannylab_tsne(x:np.ndarray, perplexity:int, dimensionality_threshold:int=50):
     if x.shape[1] > dimensionality_threshold:
         x = pca(x, n_components=dimensionality_threshold)
     return CTSNE(perplexity=perplexity, random_seed=42).fit_transform(x)
-
-def ulyanov_tsne(x:np.ndarray, perplexity:int, dimensionality_threshold:int=50, n_components:int=2):
-    if x.shape[1] > dimensionality_threshold:
-        x = pca(x, n_components=dimensionality_threshold)
-    return UTSNE(n_components=n_components, perplexity=perplexity, n_jobs=cpu_count(), random_state=42, verbose=True).fit_transform(x)
-
-def sklearn_tsne(x:np.ndarray, perplexity:int, dimensionality_threshold:int=50):
-    if x.shape[1] > dimensionality_threshold:
-        x = pca(x, n_components=dimensionality_threshold)
-    return STSNE(perplexity=perplexity, n_jobs=cpu_count(), random_state=42).fit_transform(x)
 
 def visualize(cell_line, epigenomes, labels, sequences):
     tasks = {
@@ -90,7 +82,7 @@ def visualize(cell_line, epigenomes, labels, sequences):
             "Combined enhancers data"
         ]
     }
-    print(tasks)
+
     xs = tasks["x"]
     ys = tasks["y"]
     titles = tasks["titles"]
@@ -104,25 +96,25 @@ def visualize(cell_line, epigenomes, labels, sequences):
         "tab:blue",
         "tab:orange",
     ])
-    '''
+    
     fig, axes = plt.subplots(nrows=2, ncols=4, figsize=(32, 16))
 
     for x, y, title, axis in tqdm(zip(xs, ys, titles, axes.flatten()), desc="Computing PCAs", total=len(xs)):
         axis.scatter(*pca(x).T, s=1, color=colors[y])
-        print("pca ended")
         axis.xaxis.set_visible(False)
         axis.yaxis.set_visible(False)
         axis.set_title(f"PCA decomposition - {title}")
     plt.savefig("./imgs/"+ cell_line +"/PCA decomposition")
     plt.show()
-    '''
+    
     
     for perpexity in tqdm((30, 40, 50, 100, 500, 5000), desc="Running perplexities"):
         fig, axes = plt.subplots(nrows=2, ncols=4, figsize=(40, 20))
         for x, y, title, axis in tqdm(zip(xs, ys, titles, axes.flatten()), desc="Computing TSNEs", total=len(xs)):
-            axis.scatter(*sklearn_tsne(x, perplexity=perpexity).T, s=1, color=colors[y])
+            axis.scatter(cannylab_tsne(x, perplexity=perpexity).T, s=1, color=colors[y])
             axis.xaxis.set_visible(False)
             axis.yaxis.set_visible(False)
             axis.set_title(f"TSNE decomposition - {title}")
         fig.tight_layout()
+        plt.savefig(f"TSNE decomposition - {title}")
         plt.show()

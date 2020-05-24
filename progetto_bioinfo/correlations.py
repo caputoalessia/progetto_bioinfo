@@ -16,7 +16,7 @@ def get_top_most_different(dist, n:int):
 def get_correlations(cell_line, epigenomes, labels):
 
     #Correlation
-    p_value_threshold = 0.01
+    p_value_threshold = 0.1
     correlation_threshold = 0.05
 
     uncorrelated = {
@@ -28,7 +28,8 @@ def get_correlations(cell_line, epigenomes, labels):
     for region, x in epigenomes.items():
         for column in tqdm(x.columns, desc=f"Running Pearson test for {region}", dynamic_ncols=True, leave=False):
             correlation, p_value = pearsonr(x[column].values.ravel(), labels[region].values.ravel())
-            if p_value > p_value_threshold:
+            #print(region, column, correlation)
+            if abs(correlation) > p_value_threshold:
                 print(region, column, correlation)
                 uncorrelated[region].add(column)
 
@@ -36,7 +37,8 @@ def get_correlations(cell_line, epigenomes, labels):
     for region, x in epigenomes.items():
         for column in tqdm(x.columns, desc=f"Running Spearman test for {region}", dynamic_ncols=True, leave=False):
             correlation, p_value = spearmanr(x[column].values.ravel(), labels[region].values.ravel())
-            if p_value > p_value_threshold:
+            #print(region, column, correlation)
+            if abs(correlation) > p_value_threshold:
                 print(region, column, correlation)
                 uncorrelated[region].add(column)
 
