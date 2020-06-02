@@ -14,19 +14,23 @@ from barplots import barplots
 
 if __name__ == "__main__":
     cell_line = "A549"
-    data_type = "sequence"
+    data_type = "epigenomic"
     regions = ["enhancers", "promoters"]
-    models = []
     epigenomes, labels = retrive_cell_line(cell_line, 200)
     if(data_type == "epigenomic"):
         epigenomes = get_correlations(cell_line, epigenomes, labels)
-    #visualize(cell_line, epigenomes, labels, sequences)
+        epigenomes = filter_epigenome(cell_line, epigenomes, labels)
+    #visualize(cell_line, epigenomes, labels)
+    
     for region_type in regions:
         if(data_type == "epigenomic"):
-            models.append(MLP_epi(epigenomes[region_type].shape[1]))
-            models.append(FFNN_epi(epigenomes[region_type].shape[1]))
+            models = []
+            size = epigenomes[region_type].shape[1]
+            models.append(MLP_epi(size))
+            models.append(FFNN_epi(size))
             df = train_model_epi(models, epigenomes, labels, region_type, cell_line)
         else:
+            models = []
             models.append(CNN())
             models.append(FFNN())
             df = train_model_seq(models, epigenomes, labels, region_type, cell_line)

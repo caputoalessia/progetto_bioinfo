@@ -49,14 +49,14 @@ def precomputed(results, model:str, holdout:int)->bool:
 def train_model_epi(models, epigenomes, nlabels, region_type, cell_line):
 
     y = nlabels[region_type].values.ravel()
-    X = epigenomes[region_type].values
+    X = epigenomes[region_type]
     print(X.shape[1])
-    splits = 5
+    splits = 51
     holdouts = StratifiedShuffleSplit(n_splits=splits, test_size=0.2, random_state=42)
 
     '''
-    if os.path.exists( cell_line + "_" + region_type + "_sequence.json"):
-        results = compress_json.local_load( cell_line + "_" + region_type + "_sequence.json")
+    if os.path.exists( cell_line + "_" + region_type + "_epigenomic.json"):
+        results = compress_json.local_load( cell_line + "_" + region_type + "_epigenomic.json")
     else:
     '''
     results = []
@@ -80,8 +80,8 @@ def train_model_epi(models, epigenomes, nlabels, region_type, cell_line):
                 epochs=1000,
                 shuffle=True,
                 verbose=True,
-                validation_split=0.3,
-                batch_size=512,
+                validation_split=0.1,
+                batch_size=1024,
                 class_weight=class_w,
                 callbacks=[
                     EarlyStopping(monitor="val_loss", mode="min", patience=50, restore_best_weights=True),
@@ -99,7 +99,7 @@ def train_model_epi(models, epigenomes, nlabels, region_type, cell_line):
                 "holdout":i,
                 **report(y[test], model.predict(X[test]))
             })
-            compress_json.local_dump(results, cell_line + "_" + region_type + "_sequence.json")
+            compress_json.local_dump(results, cell_line + "_" + region_type + "_epigenomic.json")
             df = pd.DataFrame(results)
             df = df.drop(columns=["holdout"])
 

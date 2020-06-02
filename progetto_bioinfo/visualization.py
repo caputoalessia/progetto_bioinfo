@@ -15,8 +15,38 @@ from sklearn.ensemble import RandomForestClassifier
 from boruta import BorutaPy
 from minepy import MINE
 from scipy.stats import spearmanr
+from keras_bed_sequence import BedSequence
+from ucsc_genomes_downloader import Genome
+
+def to_bed(data:pd.DataFrame)->pd.DataFrame:
+    """Return bed coordinates from given dataset."""
+    return data.reset_index()[data.index.names]
+
+def one_hot_encode(genome:Genome, data:pd.DataFrame, nucleotides:str="actg")->np.ndarray:
+    return np.array(BedSequence(
+        genome,
+        bed=to_bed(data),
+        nucleotides=nucleotides,
+        batch_size=1
+    ))
+
+def flat_one_hot_encode(genome:Genome, data:pd.DataFrame, window_size:int, nucleotides:str="actg")->np.ndarray:
+    return one_hot_encode(genome, data, nucleotides).reshape(-1, window_size*4).astype(int)
+
+def to_dataframe(x:np.ndarray, window_size:int, nucleotides:str="actg")->pd.DataFrame:
+    return pd.DataFrame(
+        x,
+        columns = [
+            f"{i}{nucleotide}"
+            for i in range(window_size)
+            for nucleotide in nucleotides
+        ]
+    )
+
 
 def mfa(x:pd.DataFrame, n_components:int=2, nucleotides:str='actg')->np.ndarray:
+    
+    print("mfa")
     return MFA(groups={
         nucleotide: [
             column
@@ -27,6 +57,7 @@ def mfa(x:pd.DataFrame, n_components:int=2, nucleotides:str='actg')->np.ndarray:
     }, n_components=n_components, random_state=42).fit_transform(x)
 
 def pca(x:np.ndarray, n_components:int=2)->np.ndarray:
+    print("pca")
     return PCA(n_components=n_components, random_state=42).fit_transform(x)
 
 def cannylab_tsne(x:np.ndarray, perplexity:int, dimensionality_threshold:int=50):
@@ -34,7 +65,15 @@ def cannylab_tsne(x:np.ndarray, perplexity:int, dimensionality_threshold:int=50)
         x = pca(x, n_components=dimensionality_threshold)
     return CTSNE(perplexity=perplexity, random_seed=42).fit_transform(x)
 
-def visualize(cell_line, epigenomes, labels, sequences):
+def visualize(cell_line, epigenomes, labels):
+    genome = Genome("hg19")
+    sequences = {
+    region: to_dataframe(
+        flat_one_hot_encode(genome, data, 200),
+        200
+    )
+    for region, data in epigenomes.items()
+}
     tasks = {
         "x":[
             *[
@@ -82,7 +121,7 @@ def visualize(cell_line, epigenomes, labels, sequences):
             "Combined enhancers data"
         ]
     }
-
+    print("end task")
     xs = tasks["x"]
     ys = tasks["y"]
     titles = tasks["titles"]

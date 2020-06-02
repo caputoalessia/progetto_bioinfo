@@ -6,19 +6,12 @@ from tensorflow.keras.metrics import AUC
 def FFNN_epi(input_shape):
   ffnn = Sequential([
     Input(shape=(input_shape,)),
-    Dense(1024, activation="relu"),
-    Dense(1024, activation="relu"),
-    BatchNormalization(),
-    Dropout(0.4),
     Dense(256, activation="relu"),
     Dense(128, activation="relu"),
     BatchNormalization(),
     Dense(64, activation="relu"),
     Dropout(0.3),
     Dense(32, activation="relu"),
-    Dense(16, activation="relu"),
-    Dropout(0.4),
-    Dense(4, activation="relu"),
     Dense(1, activation="sigmoid")
 ], "FFNN")
 
@@ -39,7 +32,7 @@ def FFNN_epi(input_shape):
 def MLP_epi(input_shape):
   mlp = Sequential([
     Input(shape=(input_shape,)),
-    Dense(1000, activation="relu"),
+    Dense(512, activation="relu"),
     Dense(128, activation="relu"),
     Dense(64, activation="relu"),
     Dense(32, activation="relu"),

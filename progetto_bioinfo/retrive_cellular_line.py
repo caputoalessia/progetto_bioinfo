@@ -1,17 +1,13 @@
-from tqdm.auto import tqdm  # A simple loading bar
+#from tqdm.auto import tqdm  # A simple loading bar
 import matplotlib.pyplot as plt  # A standard plotting library
 import pandas as pd
 import numpy as np
-from multiprocessing import cpu_count
-from cache_decorator import Cache
-from glob import glob
-import seaborn as sns
+#from multiprocessing import cpu_count
+#from cache_decorator import Cache
+#from glob import glob
 from epigenomic_dataset import load_epigenomes
-from ucsc_genomes_downloader import Genome
-from sklearn.metrics.pairwise import euclidean_distances
+#from ucsc_genomes_downloader import Genome
 from sklearn.impute import KNNImputer
-from sklearn.decomposition import PCA
-from keras_bed_sequence import BedSequence
 from sklearn.preprocessing import RobustScaler
 
 
@@ -34,36 +30,6 @@ def knn_imputer(df: pd.DataFrame, neighbours: int = 5) -> pd.DataFrame:
         columns=df.columns,
         index=df.index
     )
-
-
-def one_hot_encode(genome: Genome, data: pd.DataFrame, nucleotides: str = "actg") -> np.ndarray:
-    return np.array(BedSequence(
-        genome,
-        bed=to_bed(data),
-        nucleotides=nucleotides,
-        batch_size=1
-    ))
-
-
-def flat_one_hot_encode(genome: Genome, data: pd.DataFrame, window_size: int, nucleotides: str = "actg") -> np.ndarray:
-    return one_hot_encode(genome, data, nucleotides).reshape(-1, window_size*4).astype(int)
-
-
-def to_dataframe(x: np.ndarray, window_size: int, nucleotides: str = "actg") -> pd.DataFrame:
-    return pd.DataFrame(
-        x,
-        columns=[
-            f"{i}{nucleotide}"
-            for i in range(window_size)
-            for nucleotide in nucleotides
-        ]
-    )
-
-
-def to_bed(data: pd.DataFrame) -> pd.DataFrame:
-    """Return bed coordinates from given dataset."""
-    return data.reset_index()[data.index.names]
-
 
 def retrive_cell_line(line, win_size):
     cell_line = line
@@ -94,21 +60,7 @@ def retrive_cell_line(line, win_size):
         "promoters": promoters_labels,
         "enhancers": enhancers_labels
     }
-    '''
-    genome = Genome(assembly)
-
-    # Recuperare sequenze dalle regioni specificate
-    #print(genome.bed_to_sequence(to_bed(epigenomes["promoters"])[:2]))
-
-    # Flatten one-hot encoding
-    sequences = {
-        region: to_dataframe(
-            flat_one_hot_encode(genome, data, window_size),
-            window_size
-        )
-        for region, data in epigenomes.items()
-    }
-    '''
+    
     # Ratio features/samples, should be > 1
     for region, x in epigenomes.items():
         print(
@@ -136,9 +88,7 @@ def retrive_cell_line(line, win_size):
     for axis, (region, y) in zip(axes.ravel(), labels.items()):
         y.hist(ax=axis, bins=3)
         axis.set_title(f"Classes count in {region}")
-    #fig.show()
     fig.savefig("./imgs/" + cell_line + f"/class_balance")
-    #plt.close('all')
     
     # Drop constant feature
     for region, x in epigenomes.items():
