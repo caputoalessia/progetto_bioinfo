@@ -1,12 +1,7 @@
-#from tqdm.auto import tqdm  # A simple loading bar
-import matplotlib.pyplot as plt  # A standard plotting library
+import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
-#from multiprocessing import cpu_count
-#from cache_decorator import Cache
-#from glob import glob
 from epigenomic_dataset import load_epigenomes
-#from ucsc_genomes_downloader import Genome
 from sklearn.impute import KNNImputer
 from sklearn.preprocessing import RobustScaler
 
@@ -31,10 +26,14 @@ def knn_imputer(df: pd.DataFrame, neighbours: int = 5) -> pd.DataFrame:
         index=df.index
     )
 
+
 def retrive_cell_line(line, win_size):
+    # Reprod
+    np.random.seed(42)
+
     cell_line = line
     window_size = win_size
-    
+
     promoters_epigenomes, promoters_labels = load_epigenomes(
         cell_line=cell_line,
         dataset="fantom",
@@ -60,7 +59,7 @@ def retrive_cell_line(line, win_size):
         "promoters": promoters_labels,
         "enhancers": enhancers_labels
     }
-    
+
     # Ratio features/samples, should be > 1
     for region, x in epigenomes.items():
         print(
@@ -89,7 +88,7 @@ def retrive_cell_line(line, win_size):
         y.hist(ax=axis, bins=3)
         axis.set_title(f"Classes count in {region}")
     fig.savefig("./imgs/" + cell_line + f"/class_balance")
-    
+
     # Drop constant feature
     for region, x in epigenomes.items():
         result = drop_constant_features(x)
