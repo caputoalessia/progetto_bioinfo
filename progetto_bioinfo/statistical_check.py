@@ -3,10 +3,13 @@ import compress_json
 import pandas as pd
 import numpy as np
 
+
 def get_df(cell_line, data_type, region_type):
-    results = compress_json.local_load(cell_line + "_" + region_type + "_" + data_type + ".json")
+    results = compress_json.local_load(
+        cell_line + "_" + region_type + "_" + data_type + ".json")
     df = pd.DataFrame(results).drop(columns="holdout")
     return df[(df.run_type == "test")]
+
 
 def wilcoxon_test(modela_scores, modelb_scores):
     alpha = 0.01
@@ -24,9 +27,10 @@ def wilcoxon_test(modela_scores, modelb_scores):
             else:
                 print("The second model is better")
 
+
 def do_test(cell_line, data_type, region_type, model_list):
 
     models = get_df(cell_line, data_type, region_type)
-    modela_scores = models[models.model==model_list[0].name]
-    modelb_scores = models[models.model==model_list[1].name]
+    modela_scores = models[models.model == model_list[0].name]
+    modelb_scores = models[models.model == model_list[1].name]
     wilcoxon_test(modela_scores, modelb_scores)

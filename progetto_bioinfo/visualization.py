@@ -16,6 +16,7 @@ from scipy.stats import spearmanr
 from keras_bed_sequence import BedSequence
 from ucsc_genomes_downloader import Genome
 
+
 def to_bed(data: pd.DataFrame) -> pd.DataFrame:
     """Return bed coordinates from given dataset."""
     return data.reset_index()[data.index.names]
@@ -44,12 +45,12 @@ def to_dataframe(x: np.ndarray, window_size: int, nucleotides: str = "actg") -> 
         ]
     )
 
-
+# Decomposizopme PCA
 def pca(x: np.ndarray, n_components: int = 2) -> np.ndarray:
-    print("pca")
     return PCA(n_components=n_components, random_state=42).fit_transform(x)
 
-def ulyanov_tsne(x:np.ndarray, perplexity:int, dimensionality_threshold:int=50, n_components:int=2):
+#TSNE con decomposizione se necessario
+def ulyanov_tsne(x: np.ndarray, perplexity: int, dimensionality_threshold: int = 50, n_components: int = 2):
     if x.shape[1] > dimensionality_threshold:
         x = pca(x, n_components=dimensionality_threshold)
     return UTSNE(n_components=n_components, perplexity=perplexity, n_jobs=cpu_count(), random_state=42, verbose=True).fit_transform(x)
@@ -92,7 +93,7 @@ def visualize(cell_line, epigenomes, labels):
             "Sequences enhancers"
         ]
     }
-    print("end task")
+
     xs = tasks["x"]
     ys = tasks["y"]
     titles = tasks["titles"]
@@ -107,7 +108,7 @@ def visualize(cell_line, epigenomes, labels):
         "tab:orange",
     ])
 
-    fig, axes = plt.subplots(nrows=2, ncols=4, figsize=(32, 16))
+    fig, axes = plt.subplots(nrows=1, ncols=4, figsize=(32, 8))
 
     for x, y, title, axis in tqdm(zip(xs, ys, titles, axes.flatten()), desc="Computing PCAs", total=len(xs)):
         axis.scatter(*pca(x).T, s=1, color=colors[y])
@@ -120,10 +121,11 @@ def visualize(cell_line, epigenomes, labels):
     for perpexity in tqdm((50, 500), desc="Running perplexities"):
         fig, axes = plt.subplots(nrows=1, ncols=4, figsize=(40, 10))
         for x, y, title, axis in tqdm(zip(xs, ys, titles, axes.flatten()), desc="Computing TSNEs", total=len(xs)):
-            axis.scatter(*ulyanov_tsne(x, perplexity=perpexity).T, s=1, color=colors[y])
+            axis.scatter(*ulyanov_tsne(x, perplexity=perpexity).T,
+                         s=1, color=colors[y])
             axis.xaxis.set_visible(False)
             axis.yaxis.set_visible(False)
             axis.set_title(f"TSNE decomposition - {title}")
         fig.tight_layout()
-        fig.savefig("./imgs/"+ cell_line + f"/TSNE_"+ str(perpexity))
+        fig.savefig("./imgs/" + cell_line + f"/TSNE_" + str(perpexity))
         plt.show()

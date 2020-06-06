@@ -23,7 +23,7 @@ if __name__ == "__main__":
         visualize(cell_line, epigenomes, labels)
         if(data_type == "epigenomic"):
             epigenomes = get_correlations(cell_line, epigenomes, labels)
-            epigenomes = filter_epigenome(cell_line, epigenomes, labels)
+            epigenomes = filter_epigenome(cell_line, epigenomes, labels, 100)
         for region_type in tqdm(regions, desc="Training new region", dynamic_ncols=True):
             if(data_type == "epigenomic"):
                 models = []

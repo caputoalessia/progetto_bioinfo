@@ -1,4 +1,5 @@
-progetto_bioinfo
+Predizione delle regioni regolatorie attive in specifiche linee cellulari tramite metodi di deep learning
+.. image:: imgs/en_prom.png
 =========================================================================================
 |travis| |sonar_quality| |sonar_maintainability| |codacy|
 |code_climate_maintainability|
@@ -15,10 +16,7 @@ As usual, just download it using pip:
 
 Tests Coverage
 ----------------------------------------------
-Since some software handling coverages sometimes
-get slightly different results, here's three of them:
-
-|coveralls| |sonar_coverage| |code_climate_coverage|
+.. image:: imgs/coverage.png
 
 progetto corso
 

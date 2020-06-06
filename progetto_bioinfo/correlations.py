@@ -21,7 +21,7 @@ def get_correlations(cell_line, epigenomes, labels):
     # Reprod
     np.random.seed(42)
 
-    # Correlation
+    # Correlazione
     p_value_threshold = 0.01
     correlation_threshold = 0.1
 
@@ -49,7 +49,7 @@ def get_correlations(cell_line, epigenomes, labels):
             if p_value > p_value_threshold:
                 print(region, column, correlation)
                 uncorrelated[region].add(column)
-    # Non linear
+    # Correlazione non lineare
     for region, x in epigenomes.items():
         for column in tqdm(uncorrelated[region], desc=f"Running MINE test for {region}", dynamic_ncols=True, leave=False):
             mine = MINE()
@@ -60,14 +60,14 @@ def get_correlations(cell_line, epigenomes, labels):
                 print(region, column, score)
             else:
                 uncorrelated[region].remove(column)
-    # Dropping uncorrelated features
+    # Rimozione feature senza correlazione
     for region, x in epigenomes.items():
         epigenomes[region] = x.drop(columns=[
             col
             for col in uncorrelated[region]
             if col in x.columns
         ])
-    # Correlation
+    # Correlaizione
     p_value_threshold = 0.01
     correlation_threshold = 0.95
     extremely_correlated = {
@@ -109,7 +109,6 @@ def get_correlations(cell_line, epigenomes, labels):
             x[columns],
             labels[region],
         ], axis=1), hue=labels[region].columns[0])
-        # plt.show()
         sns_plot.savefig("./imgs/" + cell_line +
                          f"/Most_correlated_{region}.png")
 
@@ -121,11 +120,10 @@ def get_correlations(cell_line, epigenomes, labels):
             x[columns],
             labels[region],
         ], axis=1), hue=labels[region].columns[0])
-        # plt.show()
         sns_plot.savefig("./imgs/" + cell_line +
                          f"/Least_correlated_{region}.png")
 
-    # Most different
+    # Piú differenti
     top_number = 5
 
     for region, x in epigenomes.items():
@@ -150,7 +148,6 @@ def get_correlations(cell_line, epigenomes, labels):
         fig.tight_layout()
         fig.savefig("./imgs/" + cell_line +
                     f"/Top_{top_number}_different_features_{region}.png")
-        # plt.show()
 
     for region, x in epigenomes.items():
         dist = euclidean_distances(x.T)
@@ -169,6 +166,5 @@ def get_correlations(cell_line, epigenomes, labels):
         fig.tight_layout()
         fig.savefig("./imgs/" + cell_line +
                     f"/Top_{top_number}_different_tuples_{region}.png")
-        # plt.show()
 
     return epigenomes

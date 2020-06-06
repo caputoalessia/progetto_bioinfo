@@ -41,6 +41,7 @@ def CNN():
     cnn.summary()
     return cnn
 
+
 def FFNN():
     ffnn = Sequential([
         Input(shape=(200, 4)),

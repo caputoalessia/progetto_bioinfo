@@ -63,9 +63,10 @@ def train_model_epi(models, epigenomes, nlabels, region_type, cell_line):
     class_w = class_weight.compute_class_weight('balanced', np.unique(y), y)
     class_w = dict(enumerate(class_w))
     print("Class weights: " + str(class_w))
-    
-    if os.path.exists( cell_line + "_" + region_type + "_epigenomic.json"):
-        results = compress_json.local_load( cell_line + "_" + region_type + "_epigenomic.json")
+
+    if os.path.exists(cell_line + "_" + region_type + "_epigenomic.json"):
+        results = compress_json.local_load(
+            cell_line + "_" + region_type + "_epigenomic.json")
     else:
         results = []
 

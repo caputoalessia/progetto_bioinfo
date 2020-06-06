@@ -60,20 +60,18 @@ def retrive_cell_line(line, win_size):
         "enhancers": enhancers_labels
     }
 
-    # Ratio features/samples, should be > 1
+    # Il risultato dovrebbe essere >> 1
     for region, x in epigenomes.items():
         print(
-            f"The rate between features and samples for {region} data is: {x.shape[0]/x.shape[1]}"
+            f"Il rate tra features e samples per i dati {region} é di: {x.shape[0]/x.shape[1]}"
         )
         print("="*80)
 
-    # Check presence of Nan, if low inputation
+    # Presenza di Nan
     for region, x in epigenomes.items():
         print("\n".join((
-            f"Nan values report for {region} data:",
-            f"In the document there are {x.isna().values.sum()} NaN values out of {x.values.size} values.",
-            f"The sample (row) with most values has {x.isna().sum(axis=0).max()} NaN values out of {x.shape[1]} values.",
-            f"The feature (column) with most values has {x.isna().sum().max()} NaN values out of {x.shape[0]} values."
+            f"Controllo Nan in {region} data:",
+            f"Sono presenti {x.isna().values.sum()} NaN su {x.values.size} valori."
         )))
         print("="*80)
 
@@ -81,7 +79,7 @@ def retrive_cell_line(line, win_size):
     for region, x in epigenomes.items():
         epigenomes[region] = knn_imputer(x)
 
-    # Check class balance
+    # Controllo class balance
     fig, axes = plt.subplots(ncols=2, figsize=(10, 5))
 
     for axis, (region, y) in zip(axes.ravel(), labels.items()):
@@ -89,16 +87,16 @@ def retrive_cell_line(line, win_size):
         axis.set_title(f"Classes count in {region}")
     fig.savefig("./imgs/" + cell_line + f"/class_balance")
 
-    # Drop constant feature
+    # Se presenti feature costanti vanno rimosse
     for region, x in epigenomes.items():
         result = drop_constant_features(x)
         if x.shape[1] != result.shape[1]:
-            print(f"Features in {region} were constant and had to be dropped!")
+            print(f"In {region} le feature costanti sono state rimosse!")
             epigenomes[region] = result
         else:
-            print(f"No constant features were found in {region}!")
+            print(f"Nessuna feature costante in {region}!")
 
-    # Apply z-scoring
+    # Normalizziamo con z-scoring
     epigenomes = {
         region: robust_zscoring(x)
         for region, x in epigenomes.items()
