@@ -16,7 +16,7 @@ from tqdm.auto import tqdm
 if __name__ == "__main__":
     cell_lines = ["A549", "H1"]
     data_type = "sequence"
-    regions = ["enhancers", "promoters"]
+    regions = ["enhancers","promoters"]
 
     for cell_line in tqdm(cell_lines, desc="Prepearing cell line", dynamic_ncols=True):
         epigenomes, labels = retrive_cell_line(cell_line, 200)
@@ -48,8 +48,3 @@ if __name__ == "__main__":
                 path='barplots/' + cell_line + '/' + region_type +
                 '/' + data_type + '/{feature}.png',
             )
-            '''
-            for x in glob("barplots/" + cell_line +'/'+ region_type +'/'+ data_type +"/*.png"):
-                im = Image.open(x)
-                im.show()
-            '''
