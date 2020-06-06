@@ -1,5 +1,7 @@
 Predizione delle regioni regolatorie attive in specifiche linee cellulari tramite metodi di deep learning
+
 .. image:: imgs/en_prom.png
+
 =========================================================================================
 |travis| |sonar_quality| |sonar_maintainability| |codacy|
 |code_climate_maintainability|
