@@ -60,12 +60,11 @@ def train_model_seq(models, epigenomes, nlabels, region_type, cell_line):
     bed = to_bed(epigenomes[region_type])
     labels = nlabels[region_type].values.ravel()
 
-    '''
+
     if os.path.exists( cell_line + "_" + region_type + "_sequence.json"):
         results = compress_json.local_load( cell_line + "_" + region_type + "_sequence.json")
     else:
-    '''
-    results = []
+        results = []
     class_w = class_weight.compute_class_weight(
         'balanced', np.unique(labels), labels)
     class_w = dict(enumerate(class_w))
@@ -89,7 +88,7 @@ def train_model_seq(models, epigenomes, nlabels, region_type, cell_line):
                 class_weight=class_w,
                 callbacks=[
                     EarlyStopping(monitor="val_loss", mode="min",
-                                  patience=30, restore_best_weights=True),
+                                  patience=50, restore_best_weights=True),
                 ]
             ).history
             scores = pd.DataFrame(history).iloc[-1].to_dict()

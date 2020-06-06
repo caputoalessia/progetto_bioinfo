@@ -63,12 +63,11 @@ def train_model_epi(models, epigenomes, nlabels, region_type, cell_line):
     class_w = class_weight.compute_class_weight('balanced', np.unique(y), y)
     class_w = dict(enumerate(class_w))
     print("Class weights: " + str(class_w))
-    '''
+    
     if os.path.exists( cell_line + "_" + region_type + "_epigenomic.json"):
         results = compress_json.local_load( cell_line + "_" + region_type + "_epigenomic.json")
     else:
-    '''
-    results = []
+        results = []
 
     for i, (train, test) in tqdm(enumerate(holdouts.split(X, y)), total=splits, desc="Computing holdouts", dynamic_ncols=True):
         for model in tqdm(models, total=len(models), desc="Training models", leave=False, dynamic_ncols=True):

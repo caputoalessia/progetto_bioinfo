@@ -6,7 +6,7 @@ from progetto_bioinfo.train_model_seq import train_model_seq
 from progetto_bioinfo.train_model_epi import train_model_epi
 from progetto_bioinfo.feature_selection import filter_epigenome
 from progetto_bioinfo.epigenomic_model import FFNN_epi, MLP_epi
-
+from progetto_bioinfo.statistical_check import do_test
 
 from PIL import Image
 from glob import glob
@@ -16,14 +16,14 @@ from tqdm.auto import tqdm
 if __name__ == "__main__":
     cell_lines = ["A549", "H1"]
     data_type = "sequence"
-    regions = ["enhancers","promoters"]
+    regions = ["enhancers", "promoters"]
 
     for cell_line in tqdm(cell_lines, desc="Prepearing cell line", dynamic_ncols=True):
         epigenomes, labels = retrive_cell_line(cell_line, 200)
+        visualize(cell_line, epigenomes, labels)
         if(data_type == "epigenomic"):
             epigenomes = get_correlations(cell_line, epigenomes, labels)
             epigenomes = filter_epigenome(cell_line, epigenomes, labels)
-        #visualize(cell_line, epigenomes, labels)
         for region_type in tqdm(regions, desc="Training new region", dynamic_ncols=True):
             if(data_type == "epigenomic"):
                 models = []
@@ -48,3 +48,5 @@ if __name__ == "__main__":
                 path='barplots/' + cell_line + '/' + region_type +
                 '/' + data_type + '/{feature}.png',
             )
+
+            do_test(cell_line, data_type, region_type, models)
