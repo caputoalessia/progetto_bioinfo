@@ -1,12 +1,12 @@
 Predizione delle regioni regolatorie attive in specifiche linee cellulari tramite metodi di deep learning
-
-.. image:: imgs/en_prom.png
-
 =========================================================================================
 |travis| |sonar_quality| |sonar_maintainability| |codacy|
 |code_climate_maintainability|
 
-progetto corso
+
+.. image:: imgs/en_prom.png
+
+Progetto del corso di bioinformatica, anno accademico 2019/2020.
 
 How do I install this package?
 ----------------------------------------------
